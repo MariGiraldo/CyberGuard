@@ -1,0 +1,22 @@
+# =====================================================================
+# CyberGuard: Misión Ciberseguridad — .gitignore (raíz del repositorio)
+# Regla dura (Contrato CyberGuard §3.2 "Secretos"): NINGÚN valor real
+# de credenciales se versiona jamás. Solo existen placeholders en
+# .env.example.
+# =====================================================================
+
+# --- Secretos y entornos locales (nunca al repo) ---------------------
+.env
+*.env
+codigo/game/.env
+
+# --- Proyecto Godot: artefactos generados por el editor --------------
+codigo/game/.godot/
+
+# --- Archivos en tiempo de ejecución del juego -----------------------
+# (cola offline, partidas locales, etc. escritas en user://)
+user://
+
+# --- Temporales del sistema ------------------------------------------
+*.tmp
+.DS_Store

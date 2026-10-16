@@ -1,0 +1,40 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="CyberGuard: Mision Ciberseguridad"
+config/description="Juego educativo 2D sobre buenas prácticas de seguridad digital."
+run/main_scene="res://scenes/main/menu_principal.tscn"
+config/features=PackedStringArray("4.6")
+
+[autoload]
+
+Config="*res://autoload/config.gd"
+Temporizador="*res://autoload/temporizador.gd"
+Telemetria="*res://autoload/telemetria.gd"
+GameState="*res://autoload/game_state.gd"
+
+[display]
+
+window/size/viewport_width=320
+window/size/viewport_height=180
+window/size/window_width_override=960
+window/size/window_height_override=540
+window/stretch/mode="canvas_items"
+
+[gui]
+
+theme/custom="res://resources/temas/tema_ciberseguridad.tres"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+snap/snap_2d_transforms_to_pixel=true

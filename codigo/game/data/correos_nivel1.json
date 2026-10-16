@@ -1,0 +1,68 @@
+[
+  {
+    "id": "correo-001",
+    "remitente": "seguridad@corpseguro-bloqueo.example",
+    "asunto": "Su cuenta ha sido bloqueada temporalmente",
+    "cuerpo": "Estimado usuario: hemos detectado un acceso no autorizado desde un dispositivo desconocido. Debe verificar su identidad en las próximas 24 horas o su cuenta será suspendida de forma permanente. No responda a este mensaje.",
+    "enlace": "http://corpseguro-bloqueo.example/verificar",
+    "investigar_url": "http://192.0.2.55/acceso.php?u=analista",
+    "phishing": true,
+    "senal": "dominio_sospechoso",
+    "explicacion": "El dominio «corpseguro-bloqueo.example» imita al oficial «corpseguro.example» añadiendo un guion. La URL real apunta a una IP sin relación con la empresa."
+  },
+  {
+    "id": "correo-002",
+    "remitente": "gerencia@corpseguro-soporte.example",
+    "asunto": "ACCIÓN URGENTE: confirme su contraseña hoy mismo",
+    "cuerpo": "Por una auditoría de seguridad inmediata, todos los empleados deben confirmar su contraseña antes del final de este día. Si no lo hace, perderá el acceso a sus herramientas de trabajo. Haga clic en el enlace y introduzca sus credenciales.",
+    "enlace": "http://corpseguro-soporte.example/confirmar-credenciales",
+    "investigar_url": "http://203.0.113.99/login.php",
+    "phishing": true,
+    "senal": "urgencia",
+    "explicacion": "Ninguna empresa legítima pide la contraseña por correo. La presión de tiempo («hoy mismo», «perderá el acceso») busca que no pienses."
+  },
+  {
+    "id": "correo-003",
+    "remitente": "nomina@corpseguro-nominas.example",
+    "asunto": "Factura pendiente adjunta - revise hoy",
+    "cuerpo": "Adjuntamos la factura correspondiente al servicio de nóminas del mes. El archivo está comprimido por seguridad. Si el documento no se abre, active las macros siguiendo las instrucciones del archivo.",
+    "enlace": "",
+    "investigar_url": "factura_1026.xlsm.zip (archivo adjunto)",
+    "phishing": true,
+    "senal": "adjunto_inesperado",
+    "explicacion": "Un adjunto comprimido que pide «activar macros» es un clásico vector de infección. Nadie envía facturas por correo sin avisar y en formato ejecutable/comprimido."
+  },
+  {
+    "id": "correo-004",
+    "remitente": "it-interno@corpseguro.example",
+    "asunto": "Mantenimiento programado del servidor esta noche",
+    "cuerpo": "El equipo de IT realizará mantenimiento del servidor de correo entre las 23:00 y las 23:45 de esta noche. Durante ese periodo el envío de correos puede fallar. No se requiere ninguna acción por su parte.",
+    "enlace": "",
+    "investigar_url": "",
+    "phishing": false,
+    "senal": "",
+    "explicacion": ""
+  },
+  {
+    "id": "correo-005",
+    "remitente": "rrhh@corpseguro.example",
+    "asunto": "Recordatorio: formación de ciberseguridad el viernes",
+    "cuerpo": "Le recordamos que el viernes a las 10:00 tiene asignada la formación anual de ciberseguridad en la sala de formaciones (planta 2). La asistencia es obligatoria. No es necesario confirmar asistencia respondiendo a este correo.",
+    "enlace": "",
+    "investigar_url": "",
+    "phishing": false,
+    "senal": "",
+    "explicacion": ""
+  },
+  {
+    "id": "correo-006",
+    "remitente": "boletin@proveedor-nominas.example",
+    "asunto": "Boletín mensual de nóminas - octubre",
+    "cuerpo": "Ya está disponible el boletín mensual con las novedades normativas de nóminas. Puede consultarse en el portal interno de proveedores. Este boletín no solicita credenciales ni datos personales.",
+    "enlace": "https://portal.proveedor-nominas.example/boletin/10",
+    "investigar_url": "https://portal.proveedor-nominas.example/boletin/10",
+    "phishing": false,
+    "senal": "",
+    "explicacion": ""
+  }
+]
