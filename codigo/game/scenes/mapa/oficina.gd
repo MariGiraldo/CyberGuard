@@ -26,19 +26,26 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if _panel != null:
-		return
 	_actualizar_cercania()
-	if Input.is_action_just_pressed("interactuar") and _terminal_cercana != null:
-		_al_activar_terminal(_terminal_cercana)
+	if Input.is_action_just_pressed("interactuar"):
+		if _panel != null:
+			_cerrar_panel()
+			return
+		if _terminal_cercana != null and _terminal_cercana.activa:
+			_al_activar_terminal(_terminal_cercana)
+			return
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _panel != null:
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interactuar"):
+			_cerrar_panel()
+			get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		# Point & Click: caminar hacia donde se hace clic.
-		_jugador.objetivo = get_global_mouse_position()
+		if _jugador.controlable:
+			_jugador.objetivo = get_global_mouse_position()
 
 
 # --- Terminales ---------------------------------------------------------------
@@ -55,6 +62,8 @@ func _actualizar_cercania() -> void:
 			menor_distancia = distancia
 			mas_cercana = terminal_ref
 	_terminal_cercana = mas_cercana
+	if _panel != null:
+		return
 	if _terminal_cercana == null:
 		_hud.ocultar_prompt()
 	elif _terminal_cercana.activa:
@@ -78,15 +87,19 @@ func _abrir_panel(panel: TerminalCorreos) -> void:
 	_panel.cerrado.connect(_cerrar_panel)
 	_hud.add_child(_panel)
 	_hud.ocultar_prompt()
-	_jugador.controlable = false
+	if _jugador != null:
+		_jugador.controlable = false
+		_jugador.objetivo = null
+		_jugador.set_physics_process(false)
 
 
 func _cerrar_panel() -> void:
 	if _panel != null:
 		_panel.queue_free()
 		_panel = null
-	if GameState.en_partida:
+	if GameState.en_partida and _jugador != null:
 		_jugador.controlable = true
+		_jugador.set_physics_process(true)
 
 
 # --- Partida ------------------------------------------------------------------
@@ -100,11 +113,16 @@ func _al_expirar_tiempo() -> void:
 	if _panel != null:
 		_panel.queue_free()
 		_panel = null
+	if _jugador != null:
+		_jugador.controlable = false
+		_jugador.set_physics_process(false)
 
 
 func _al_finalizar_partida(puntaje: int) -> void:
 	_hud.ocultar_prompt()
-	_jugador.controlable = false
+	if _jugador != null:
+		_jugador.controlable = false
+		_jugador.set_physics_process(false)
 	_hud.mostrar_resumen(puntaje, GameState.aciertos, GameState.errores, Temporizador.segundos_restantes() <= 0)
 
 

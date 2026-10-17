@@ -12,12 +12,14 @@ var _panel_mensaje: Control
 var _etiqueta_mensaje: Label
 var _panel_resumen: Control
 var _etiquetas_resumen: Dictionary = {}
+var _paneles: Array = []  # paneles centrados y su tamaño base ({panel, base})
 
 const TEMA_CIBER := preload("res://resources/temas/tema_ciberseguridad.tres")
 
 func _ready() -> void:
 	layer = 10
 	_construir()
+	get_viewport().size_changed.connect(_ajustar_paneles)
 
 
 ## Actualiza el temporizador (formato mm:ss; rojo con menos de 30 s).
@@ -91,9 +93,9 @@ func _construir() -> void:
 	add_child(_etiqueta_tiempo)
 
 	_etiqueta_prompt = Label.new()
-	_etiqueta_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_etiqueta_prompt.offset_left = -150
-	_etiqueta_prompt.offset_right = 150
+	_etiqueta_prompt.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	_etiqueta_prompt.offset_left = 10
+	_etiqueta_prompt.offset_right = -10
 	_etiqueta_prompt.offset_top = -14
 	_etiqueta_prompt.offset_bottom = -2
 	_etiqueta_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -105,6 +107,7 @@ func _construir() -> void:
 	_panel_mensaje = _crear_panel_centro(Vector2(260, 56))
 	_etiqueta_mensaje = _panel_mensaje.get_child(1) as Label
 	_etiqueta_mensaje.text = ""
+	(_panel_mensaje.get_child(2) as Control).visible = false  # los avisos no usan el contenido del resumen
 	_panel_mensaje.visible = false
 
 	_panel_resumen = _crear_panel_centro(Vector2(240, 110))
@@ -123,20 +126,23 @@ func _construir() -> void:
 		continuar_pulsado.emit()
 		get_tree().change_scene_to_file("res://scenes/main/menu_principal.tscn")
 	)
+	(_panel_resumen.get_child(1) as Control).visible = false  # el resumen usa el contenido, no el aviso
 	_panel_resumen.visible = false
 
+	_ajustar_paneles()
 
-## Panel centrado con fondo oscuro; devuelve el Control raíz.
+
+## Panel centrado con fondo oscuro; se adapta al tamaño de la pantalla.
 ## Hijos: [0] ColorRect de fondo, [1] Label mensaje (opcional), [2] VBox contenido.
 func _crear_panel_centro(tamano: Vector2) -> Control:
+	# El CenterContainer garantiza el centrado en cualquier resolución.
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(centro)
+
 	var panel := Control.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	var w: float = min(tamano.x, 310.0)
-	var h: float = min(tamano.y, 170.0)
-	panel.offset_left = -w / 2.0
-	panel.offset_right = w / 2.0
-	panel.offset_top = -h / 2.0
-	panel.offset_bottom = h / 2.0
+	centro.add_child(panel)
+	_paneles.append({"panel": panel, "base": tamano})
 
 	var fondo := ColorRect.new()
 	fondo.color = Color("#1A1D24")
@@ -183,5 +189,16 @@ func _crear_panel_centro(tamano: Vector2) -> Control:
 	boton.add_theme_font_size_override("font_size", 6)
 	contenido.add_child(boton)
 
-	add_child(panel)
 	return panel
+
+
+## Los paneles usan su tamaño base como máximo y se encogen si la
+## pantalla es más pequeña; el CenterContainer los mantiene centrados.
+func _ajustar_paneles() -> void:
+	var vp: Vector2 = get_viewport().get_visible_rect().size
+	for entrada in _paneles:
+		var base: Vector2 = entrada["base"]
+		(entrada["panel"] as Control).custom_minimum_size = Vector2(
+			minf(base.x, maxf(vp.x - 24.0, 140.0)),
+			minf(base.y, maxf(vp.y - 24.0, 80.0))
+		)
