@@ -6,6 +6,8 @@ signal cerrado()
 const RUTA_CORREOS := "res://data/correos_nivel1.json"
 const LOGICA := preload("res://systems/phishing/logica_phishing.gd")
 const TEMA_CIBER := preload("res://resources/temas/tema_ciberseguridad.tres")
+const PANEL_BASE := Vector2(280, 150)  ## Tamaño preferido del panel de la misión.
+const PANEL_MARGEN := 12.0            ## Separación mínima respecto al borde.
 
 ## Colores unificados de interfaz
 const VERDE_NEON := Color("#00FF66")
@@ -35,6 +37,8 @@ var _icono_feedback: TextureRect
 
 var _boton_siguiente: Button
 var _etiqueta_progreso: Label
+var _panel_mision: Control
+var _desplazable: ScrollContainer
 
 func _ready() -> void:
 	theme = TEMA_CIBER
@@ -48,8 +52,15 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interactuar"):
 		_cerrar()
+		get_viewport().set_input_as_handled()
+
+
+func _notification(que: int) -> void:
+	# Si cambia el tamaño de la ventana, el panel se reajusta y sigue centrado.
+	if que == NOTIFICATION_RESIZED and is_instance_valid(_panel_mision):
+		_ajustar_al_ventana()
 
 
 # --- Lógica de Correos -------------------------------------------------------
@@ -83,15 +94,9 @@ func _mostrar_correo(indice: int) -> void:
 	_campo_remitente.text = "De: %s" % str(correo.get("remitente", ""))
 	_campo_asunto.text = "Asunto: %s" % str(correo.get("asunto", ""))
 	_campo_cuerpo.text = str(correo.get("cuerpo", ""))
-
-	var adjunto: Variant = correo.get("adjunto", null)
-	if adjunto == null or str(adjunto).is_empty():
-		_campo_adjunto.text = "Adjunto: (ninguno)"
-		_campo_adjunto.add_theme_color_override("font_color", Color("8A9BA8"))
-	else:
-		_campo_adjunto.text = "Adjunto: %s" % str(adjunto)
-		_campo_adjunto.add_theme_color_override("font_color", VERDE_NEON)
-
+	# Cada correo se lee desde arriba: reiniciamos el desplazamiento.
+	if _desplazable != null:
+		_desplazable.set_deferred("scroll_vertical", 0)
 	_campo_enlace.text = "Enlace: (pulsa «Investigar enlace»)"
 	_boton_investigar.disabled = false
 	
@@ -183,45 +188,77 @@ func _cerrar() -> void:
 
 # --- Construcción de la Interfaz ---------------------------------------------
 
+## El panel ocupa su tamaño base como máximo y se encoge si la pantalla
+## es más pequeña, de modo que nunca invade el borde y queda siempre centrado.
+func _ajustar_al_ventana() -> void:
+	var vp := get_viewport_rect().size
+	_panel_mision.custom_minimum_size = Vector2(
+		minf(PANEL_BASE.x, maxf(vp.x - PANEL_MARGEN * 2.0, 160.0)),
+		minf(PANEL_BASE.y, maxf(vp.y - PANEL_MARGEN * 2.0, 100.0))
+	)
+
+
 func _construir() -> void:
-	custom_minimum_size = Vector2(260, 150)
+	var oscurecido := ColorRect.new()
+	oscurecido.color = Color(0, 0, 0, 0.55)
+	oscurecido.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(oscurecido)
+
+	# El CenterContainer garantiza que el panel quede en el centro exacto
+	# de la pantalla, sea cual sea la resolución o el tamaño de la ventana.
+	var centro := CenterContainer.new()
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(centro)
+
+	_panel_mision = Control.new()
+	centro.add_child(_panel_mision)
 
 	var fondo := ColorRect.new()
 	fondo.color = Color("#0D1117")
 	fondo.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(fondo)
-
-	var fondo_textura := EstilosUI.textura_a_pantalla(EstilosUI.TEXTURA_CUADRO)
-	add_child(fondo_textura)
+	_panel_mision.add_child(fondo)
 
 	var margen := MarginContainer.new()
 	margen.set_anchors_preset(Control.PRESET_FULL_RECT)
-	margen.add_theme_constant_override("margin_left", 6)
-	margen.add_theme_constant_override("margin_right", 6)
-	margen.add_theme_constant_override("margin_top", 6)
-	margen.add_theme_constant_override("margin_bottom", 6)
-	add_child(margen)
+	margen.add_theme_constant_override("margin_left", 8)
+	margen.add_theme_constant_override("margin_right", 8)
+	margen.add_theme_constant_override("margin_top", 8)
+	margen.add_theme_constant_override("margin_bottom", 8)
+	_panel_mision.add_child(margen)
 
-	var caja := HBoxContainer.new()
+	var caja := VBoxContainer.new()
 	caja.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	caja.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	caja.add_theme_constant_override("separation", 6)
 	margen.add_child(caja)
 
-	_caja_bandeja(caja)
-	_caja_lectura_y_feedback(caja)
+	var caja_superior := HBoxContainer.new()
+	caja_superior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	caja_superior.add_theme_constant_override("separation", 4)
+	caja.add_child(caja_superior)
+
+	var caja_inferior := VBoxContainer.new()
+	caja_inferior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	caja_inferior.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	caja_inferior.add_theme_constant_override("separation", 4)
+	caja.add_child(caja_inferior)
+
+	_caja_bandeja(caja_superior)
+	_caja_lectura(caja_superior, caja_inferior)
+
+	_ajustar_al_ventana()
 
 
 func _caja_bandeja(caja: HBoxContainer) -> void:
 	var bandeja := VBoxContainer.new()
-	bandeja.custom_minimum_size = Vector2(100, 0)
+	bandeja.custom_minimum_size = Vector2(90, 0)
+	bandeja.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	bandeja.add_theme_constant_override("separation", 2)
 	caja.add_child(bandeja)
 
 	var titulo := Label.new()
-	titulo.text = "Bandeja de Entrada"
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.add_theme_color_override("font_color", VERDE_NEON)
+	titulo.text = "Bandeja"
+	titulo.add_theme_color_override("font_color", Color("4fc3f7"))
 	titulo.add_theme_font_size_override("font_size", 6)
 	bandeja.add_child(titulo)
 
@@ -246,11 +283,12 @@ func _caja_bandeja(caja: HBoxContainer) -> void:
 		var boton := Button.new()
 		boton.text = str(correo.get("asunto", "(sin asunto)"))
 		boton.clip_text = true
+		# Los asuntos largos se recortan con "…" en vez de salirse del botón.
+		boton.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.disabled = false
 		boton.add_theme_font_size_override("font_size", 5)
-		boton.add_theme_color_override("font_color", TEXTO_BLANCO)
-		EstilosUI.aplicar_boton(boton, 0.0)
-
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var indice := _correos.find(correo)
 		boton.pressed.connect(func() -> void: _mostrar_correo(indice))
 
@@ -265,7 +303,7 @@ func _caja_bandeja(caja: HBoxContainer) -> void:
 	bandeja.add_child(_etiqueta_progreso)
 
 	_boton_siguiente = Button.new()
-	_boton_siguiente.text = "Siguiente correo ▸"
+	_boton_siguiente.text = "Siguiente"
 	_boton_siguiente.disabled = true
 	_boton_siguiente.add_theme_font_size_override("font_size", 6)
 	EstilosUI.aplicar_boton(_boton_siguiente)
@@ -273,68 +311,74 @@ func _caja_bandeja(caja: HBoxContainer) -> void:
 	bandeja.add_child(_boton_siguiente)
 
 	var boton_cerrar := Button.new()
-	boton_cerrar.text = "Cerrar (Esc)"
+	boton_cerrar.text = "Cerrar (Esc/E)"
 	boton_cerrar.add_theme_font_size_override("font_size", 6)
 	EstilosUI.aplicar_boton(boton_cerrar)
 	boton_cerrar.pressed.connect(_cerrar)
 	bandeja.add_child(boton_cerrar)
 
 
-func _caja_lectura_y_feedback(caja: HBoxContainer) -> void:
-	var lado_derecho := PanelContainer.new()
-	lado_derecho.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lado_derecho.size_flags_vertical = Control.SIZE_EXPAND_FILL
+func _caja_lectura(caja_izq: HBoxContainer, caja_inf: VBoxContainer) -> void:
+	var lectura := VBoxContainer.new()
+	lectura.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lectura.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	lectura.add_theme_constant_override("separation", 2)
+	caja_izq.add_child(lectura)
 
-	var estilo_panel := StyleBoxFlat.new()
-	estilo_panel.bg_color = Color("#0D1117", 0.8)
-	estilo_panel.border_color = Color("#30363D")
-	estilo_panel.set_border_width_all(1)
-	estilo_panel.set_corner_radius_all(3)
-	lado_derecho.add_theme_stylebox_override("panel", estilo_panel)
-	caja.add_child(lado_derecho)
-
-	var margen_derecho := MarginContainer.new()
-	margen_derecho.add_theme_constant_override("margin_left", 4)
-	margen_derecho.add_theme_constant_override("margin_right", 4)
-	margen_derecho.add_theme_constant_override("margin_top", 4)
-	margen_derecho.add_theme_constant_override("margin_bottom", 4)
-	lado_derecho.add_child(margen_derecho)
-
-	_contenedor_lectura = VBoxContainer.new()
-	_contenedor_lectura.add_theme_constant_override("separation", 2)
-	margen_derecho.add_child(_contenedor_lectura)
+	var encabezado := VBoxContainer.new()
+	encabezado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	encabezado.add_theme_constant_override("separation", 1)
+	lectura.add_child(encabezado)
 
 	_campo_remitente = Label.new()
 	_campo_remitente.add_theme_color_override("font_color", VERDE_NEON)
 	_campo_remitente.add_theme_font_size_override("font_size", 6)
 	_campo_remitente.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_contenedor_lectura.add_child(_campo_remitente)
+	encabezado.add_child(_campo_remitente)
 
 	_campo_asunto = Label.new()
 	_campo_asunto.add_theme_color_override("font_color", VERDE_NEON)
 	_campo_asunto.add_theme_font_size_override("font_size", 6)
 	_campo_asunto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_contenedor_lectura.add_child(_campo_asunto)
+	encabezado.add_child(_campo_asunto)
+
+	# Área de lectura del cuerpo: un ScrollContainer con relleno de 4px evita
+	# que el texto largo desborde el panel; el jugador puede desplazarlo.
+	_desplazable = ScrollContainer.new()
+	_desplazable.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_desplazable.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_desplazable.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_desplazable.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+
+	var relleno := MarginContainer.new()
+	relleno.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	relleno.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	relleno.add_theme_constant_override("margin_left", 4)
+	relleno.add_theme_constant_override("margin_right", 4)
+	relleno.add_theme_constant_override("margin_top", 4)
+	relleno.add_theme_constant_override("margin_bottom", 4)
+	caja_inf.add_child(relleno)
+	relleno.add_child(_desplazable)
 
 	_campo_cuerpo = Label.new()
 	_campo_cuerpo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_campo_cuerpo.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_campo_cuerpo.add_theme_color_override("font_color", TEXTO_BLANCO)
+	_campo_cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_campo_cuerpo.add_theme_color_override("font_color", Color("b0bec5"))
 	_campo_cuerpo.add_theme_font_size_override("font_size", 6)
-	_contenedor_lectura.add_child(_campo_cuerpo)
-
-	_campo_adjunto = Label.new()
-	_campo_adjunto.add_theme_font_size_override("font_size", 6)
-	_contenedor_lectura.add_child(_campo_adjunto)
+	_desplazable.add_child(_campo_cuerpo)
 
 	var fila_enlace := HBoxContainer.new()
-	_contenedor_lectura.add_child(fila_enlace)
+	fila_enlace.add_theme_constant_override("separation", 2)
+	fila_enlace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_enlace.alignment = BoxContainer.ALIGNMENT_CENTER
+	caja_inf.add_child(fila_enlace)
 
 	_campo_enlace = Label.new()
+	_campo_enlace.text = "Enlace: (pulsa «Investigar enlace»)"
 	_campo_enlace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_campo_enlace.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_campo_enlace.add_theme_color_override("font_color", VERDE_NEON)
-	_campo_enlace.add_theme_font_size_override("font_size", 5)
+	_campo_enlace.add_theme_color_override("font_color", Color("90caf9"))
+	_campo_enlace.add_theme_font_size_override("font_size", 6)
 	fila_enlace.add_child(_campo_enlace)
 
 	_boton_investigar = Button.new()
@@ -345,9 +389,9 @@ func _caja_lectura_y_feedback(caja: HBoxContainer) -> void:
 	fila_enlace.add_child(_boton_investigar)
 
 	var acciones := HBoxContainer.new()
+	acciones.add_theme_constant_override("separation", 4)
 	acciones.alignment = BoxContainer.ALIGNMENT_CENTER
-	acciones.add_theme_constant_override("separation", 8)
-	_contenedor_lectura.add_child(acciones)
+	caja_inf.add_child(acciones)
 
 	_boton_phishing = Button.new()
 	_boton_phishing.text = "  PHISHING  "
@@ -388,7 +432,7 @@ func _caja_lectura_y_feedback(caja: HBoxContainer) -> void:
 
 	_etiqueta_feedback = Label.new()
 	_etiqueta_feedback.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_etiqueta_feedback.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_etiqueta_feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_etiqueta_feedback.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_etiqueta_feedback.add_theme_font_size_override("font_size", 6)
-	caja_fb_interna.add_child(_etiqueta_feedback)
+	caja_inf.add_child(_etiqueta_feedback)

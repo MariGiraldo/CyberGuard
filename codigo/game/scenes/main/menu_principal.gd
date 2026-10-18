@@ -101,10 +101,8 @@ func _construir() -> void:
 	# BOTÓN INICIAR MISIÓN
 	var boton := Button.new()
 	boton.text = "Iniciar misión"
-	boton.custom_minimum_size = TAMANO_BOTON
-	boton.add_theme_color_override("font_color", VERDE_NEON)
-	boton.add_theme_font_size_override("font_size", 6)
-	EstilosUI.aplicar_boton(boton)
+	boton.custom_minimum_size = Vector2(110, 14)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boton.pressed.connect(func() -> void:
 		get_tree().change_scene_to_file("res://scenes/mapa/oficina.tscn")
 	)
@@ -113,20 +111,22 @@ func _construir() -> void:
 	# BOTÓN SALIR
 	var boton_salir := Button.new()
 	boton_salir.text = "Salir"
-	boton_salir.custom_minimum_size = TAMANO_BOTON
-	boton_salir.add_theme_color_override("font_color", VERDE_NEON)
-	boton_salir.add_theme_font_size_override("font_size", 6)
-	EstilosUI.aplicar_boton(boton_salir)
+	boton_salir.custom_minimum_size = Vector2(110, 14)
+	boton_salir.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	boton_salir.pressed.connect(func() -> void: get_tree().quit())
 	caja.add_child(boton_salir)
 
 	# PIE INFORMATIVO CENTRADO ABAJO
 	var aviso := Label.new()
 	aviso.text = "Contenido 100% simulado con fines educativos.\nWASD/flechas para moverte · clic para caminar · E para interactuar."
-	aviso.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	aviso.offset_left = -150
-	aviso.offset_right = 150
-	aviso.offset_top = -22
+	aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	aviso.add_theme_color_override("font_color", Color("6b7c8f"))
+	aviso.add_theme_font_size_override("font_size", 6)
+	aviso.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	aviso.offset_left = 6
+	aviso.offset_right = -6
+	aviso.offset_top = -20
 	aviso.offset_bottom = -4
 	aviso.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	aviso.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -155,7 +155,11 @@ func _construir() -> void:
 		aviso_red.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		aviso_red.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		aviso_red.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		aviso_red.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		aviso_red.add_theme_color_override("font_color", VERDE_NEON)
-		aviso_red.add_theme_font_size_override("font_size", 5)
-		fila_aviso.add_child(aviso_red)
+		aviso_red.add_theme_color_override("font_color", Color("ffb74d"))
+		aviso_red.add_theme_font_size_override("font_size", 6)
+		aviso_red.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		aviso_red.offset_left = 4
+		aviso_red.offset_right = -4
+		aviso_red.offset_top = 2
+		aviso_red.offset_bottom = 10
+		add_child(aviso_red)

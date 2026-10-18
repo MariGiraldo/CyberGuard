@@ -60,20 +60,25 @@ func _crear_fondo_mapa() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not _iniciado or _panel != null:
-		return
 	_actualizar_cercania()
-
-	# ÚNICA VÍA DE APERTURA: tecla «interactuar» (E) estando junto a la terminal.
-	if Input.is_action_just_pressed("interactuar") and _terminal_cercana != null:
-		_abrir_terminal(_terminal_cercana)
+	if Input.is_action_just_pressed("interactuar"):
+		if _panel != null:
+			_cerrar_panel()
+			return
+		if _terminal_cercana != null and _terminal_cercana.activa:
+			_al_activar_terminal(_terminal_cercana)
+			return
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not _iniciado or _panel != null:
+	if _panel != null:
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("interactuar"):
+			_cerrar_panel()
+			get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		if _jugador != null:
+		# Point & Click: caminar hacia donde se hace clic.
+		if _jugador.controlable:
 			_jugador.objetivo = get_global_mouse_position()
 
 
@@ -93,7 +98,8 @@ func _actualizar_cercania() -> void:
 			mas_cercana = terminal_ref
 
 	_terminal_cercana = mas_cercana
-
+	if _panel != null:
+		return
 	if _terminal_cercana == null:
 		_hud.ocultar_prompt()
 	elif _terminal_cercana.activa:
@@ -155,6 +161,8 @@ func _abrir_panel(panel: Control) -> void:
 	_hud.ocultar_prompt()
 	if _jugador != null:
 		_jugador.controlable = false
+		_jugador.objetivo = null
+		_jugador.set_physics_process(false)
 
 
 func _cerrar_panel() -> void:
@@ -165,8 +173,9 @@ func _cerrar_panel() -> void:
 		else:
 			_panel.queue_free()
 		_panel = null
-	if _jugador != null:
+	if GameState.en_partida and _jugador != null:
 		_jugador.controlable = true
+		_jugador.set_physics_process(true)
 
 
 # --- Partida ------------------------------------------------------------------
@@ -180,13 +189,20 @@ func _al_registrar_decision(_tipo: String, correcto: bool, puntaje: int) -> void
 
 
 func _al_expirar_tiempo() -> void:
-	_cerrar_panel()
+	# El resumen se muestra en _al_finalizar_partida (GameState finaliza al expirar).
+	if _panel != null:
+		_panel.queue_free()
+		_panel = null
+	if _jugador != null:
+		_jugador.controlable = false
+		_jugador.set_physics_process(false)
 
 
 func _al_finalizar_partida(puntaje: int) -> void:
 	_hud.ocultar_prompt()
 	if _jugador != null:
 		_jugador.controlable = false
+		_jugador.set_physics_process(false)
 	_hud.mostrar_resumen(puntaje, GameState.aciertos, GameState.errores, Temporizador.segundos_restantes() <= 0)
 
 
