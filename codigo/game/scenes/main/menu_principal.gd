@@ -2,6 +2,7 @@ extends Control
 ## Menú principal de CyberGuard: Misión Ciberseguridad.
 
 const TEMA_CIBER := preload("res://resources/temas/tema_ciberseguridad.tres")
+const URL_INFORME := "https://datastudio.google.com/embed/reporting/0b1ae01d-6376-4ac4-ae22-a374cb3afa2e/page/D1WBG"
 
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -57,6 +58,13 @@ func _construir() -> void:
 		get_tree().change_scene_to_file("res://scenes/mapa/oficina.tscn")
 	)
 	caja.add_child(boton)
+
+	var boton_informe := Button.new()
+	boton_informe.text = "Ver informe"
+	boton_informe.custom_minimum_size = Vector2(110, 14)
+	boton_informe.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	boton_informe.pressed.connect(func() -> void: OS.shell_open(URL_INFORME))
+	caja.add_child(boton_informe)
 
 	var boton_salir := Button.new()
 	boton_salir.text = "Salir"
