@@ -13,7 +13,7 @@ config_version=5
 config/name="CyberGuard: Mision Ciberseguridad"
 config/description="Juego educativo 2D sobre buenas prácticas de seguridad digital."
 run/main_scene="res://scenes/main/menu_principal.tscn"
-config/features=PackedStringArray("4.7")
+config/features=PackedStringArray("4.6")
 
 [autoload]
 
@@ -21,6 +21,7 @@ Config="*res://autoload/config.gd"
 Temporizador="*res://autoload/temporizador.gd"
 Telemetria="*res://autoload/telemetria.gd"
 GameState="*res://autoload/game_state.gd"
+AudioManager="*res://autoload/audio_manager.gd"
 
 [display]
 
@@ -38,3 +39,4 @@ theme/custom="res://resources/temas/tema_ciberseguridad.tres"
 
 textures/canvas_textures/default_texture_filter=0
 snap/snap_2d_transforms_to_pixel=true
+snap/snap_2d_vertexes_to_pixel=true

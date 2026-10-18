@@ -71,6 +71,7 @@ func finalizar_partida() -> int:
 		puntaje += bonus
 	Temporizador.detener()
 	Telemetria.finalizar_en_servidor()
+	Telemetria.drenar_cola()  # disparador nº 2 del drenado (arquitectura §4.4)
 	partida_finalizada.emit(puntaje)
 	return puntaje
 
@@ -78,7 +79,7 @@ func finalizar_partida() -> int:
 ## Duración en segundos de un nivel (desde data/niveles.json; por defecto 300).
 func duracion_nivel(nivel_id: int) -> int:
 	for nivel in _niveles:
-		if int(nivel.get("numero", 0)) == nivel_id:
+		if _numero_nivel(nivel) == nivel_id:
 			return int(nivel.get("duracion_seg", 300))
 	return 300
 
@@ -86,9 +87,15 @@ func duracion_nivel(nivel_id: int) -> int:
 ## Nombre del nivel para el HUD.
 func nombre_nivel(nivel_id: int) -> String:
 	for nivel in _niveles:
-		if int(nivel.get("numero", 0)) == nivel_id:
+		if _numero_nivel(nivel) == nivel_id:
 			return str(nivel.get("nombre", ""))
 	return ""
+
+
+## El JSON canónico (doc/diseno/01-misiones.md §5.3) usa la clave `id`;
+## se acepta también `numero` por compatibilidad con el formato anterior.
+func _numero_nivel(nivel: Dictionary) -> int:
+	return int(nivel.get("id", nivel.get("numero", 0)))
 
 
 func _al_expirar_tiempo() -> void:
@@ -120,7 +127,11 @@ func _cargar_niveles() -> void:
 		return
 	var texto := FileAccess.get_file_as_string(RUTA_NIVELES)
 	var datos = JSON.parse_string(texto)
-	if datos is Array:
+	# Formato canónico: {"niveles": [...]}. Se acepta también un array
+	# raíz por compatibilidad con versiones anteriores del fichero.
+	if datos is Dictionary and datos.get("niveles") is Array:
+		_niveles = datos.get("niveles")
+	elif datos is Array:
 		_niveles = datos
 
 

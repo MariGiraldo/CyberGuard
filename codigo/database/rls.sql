@@ -19,7 +19,7 @@
 --   de Looker pasan por RPC (SECURITY DEFINER) o por las vistas v_*
 --   con el rol dedicado `looker_lectura` (vistas = T41, no aquí).
 --
--- Orden de ejecución: schema.sql → rls.sql → rpc_puntaje.sql → seed.sql
+-- Orden de ejecución: schema.sql → rls.sql → rpc_puntaje.sql → views.sql → seed.sql
 -- =====================================================================
 
 
@@ -113,10 +113,10 @@ CREATE POLICY "anon_solo_insert_eventos_servidor"
 --    vistas v_* (T41) y con este rol — nunca con `anon` ni con
 --    `service_role` (Contrato CyberGuard §3.5).
 --
---    NOTA: las vistas v_* todavía no existen (son la T41). Este archivo
---    solo crea y prepara el rol; cuando views.sql se ejecute, hay que
---    concederle SELECT sobre las vistas nuevas, p. ej.:
---      GRANT SELECT ON ALL TABLES IN SCHEMA public TO looker_lectura;
+--    NOTA: concesión MÍNIMA. `looker_lectura` NO tiene SELECT sobre las
+--    tablas crudas: solo sobre las vistas v_* que crea `views.sql`
+--    (GRANT SELECT ON v_resumen_vulnerabilidades / v_efectividad_nivel).
+--    Así Looker jamás ve tablas internas ni campos sensibles.
 -- ---------------------------------------------------------------------
 DO $$
 BEGIN
@@ -129,10 +129,14 @@ BEGIN
 END
 $$;
 
--- Acceso al esquema y SELECT sobre lo que exista hoy (tablas base);
--- las vistas v_* se concederán en T41.
+-- Acceso al esquema (necesario para resolver las vistas v_*).
 GRANT USAGE ON SCHEMA public TO looker_lectura;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO looker_lectura;
+
+-- Concesión mínima: SIN SELECT sobre tablas crudas. Se revoca explícitamente
+-- por si un rol anterior hubiera heredado el grant (el antiguo script concedía
+-- SELECT ON ALL TABLES, lo que rompía el mínimo privilegio del §1 del skill
+-- looker-analytics-schema). Las vistas v_* se conceden en views.sql.
+REVOKE SELECT ON ALL TABLES IN SCHEMA public FROM looker_lectura;
 
 -- looker_lectura NO escribe: sin privilegios de escritura y sin
 -- políticas de INSERT, no puede alterar la telemetría.

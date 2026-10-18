@@ -16,6 +16,9 @@ var _paneles: Array = []  # paneles centrados y su tamaño base ({panel, base})
 
 const TEMA_CIBER := preload("res://resources/temas/tema_ciberseguridad.tres")
 
+## Verde neón: color base de todos los textos del HUD y de los paneles emergentes.
+const VERDE_NEON := Color("#00FF66")
+
 func _ready() -> void:
 	layer = 10
 	_construir()
@@ -26,7 +29,7 @@ func _ready() -> void:
 func set_tiempo(restante_seg: int) -> void:
 	_etiqueta_tiempo.text = "Tiempo %02d:%02d" % [restante_seg / 60, restante_seg % 60]
 	_etiqueta_tiempo.add_theme_color_override(
-		"font_color", Color("ff6b6b") if restante_seg <= 30 else Color("e8eef4")
+		"font_color", Color("ff6b6b") if restante_seg <= 30 else VERDE_NEON
 	)
 
 
@@ -78,7 +81,7 @@ func _construir() -> void:
 	_etiqueta_marcador.offset_top = 2
 	_etiqueta_marcador.offset_bottom = 10
 	_etiqueta_marcador.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_etiqueta_marcador.add_theme_color_override("font_color", Color("e8eef4"))
+	_etiqueta_marcador.add_theme_color_override("font_color", VERDE_NEON)
 	_etiqueta_marcador.add_theme_font_size_override("font_size", 6)
 	add_child(_etiqueta_marcador)
 
@@ -101,27 +104,32 @@ func _construir() -> void:
 	_etiqueta_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_etiqueta_prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_etiqueta_prompt.visible = false
+	_etiqueta_prompt.add_theme_color_override("font_color", VERDE_NEON)
 	_etiqueta_prompt.add_theme_font_size_override("font_size", 6)
 	add_child(_etiqueta_prompt)
 
-	_panel_mensaje = _crear_panel_centro(Vector2(260, 56))
-	_etiqueta_mensaje = _panel_mensaje.get_child(1) as Label
+	_panel_mensaje = _crear_panel_centro(Vector2(256, 56))
+	_etiqueta_mensaje = _panel_mensaje.get_child(2) as Label
 	_etiqueta_mensaje.text = ""
 	(_panel_mensaje.get_child(2) as Control).visible = false  # los avisos no usan el contenido del resumen
 	_panel_mensaje.visible = false
 
-	_panel_resumen = _crear_panel_centro(Vector2(240, 110))
-	var contenido: VBoxContainer = _panel_resumen.get_child(2) as VBoxContainer
+	_panel_resumen = _crear_panel_centro(Vector2(240, 112))
+	var contenido: VBoxContainer = _panel_resumen.get_child(3) as VBoxContainer
 	var titulo := contenido.get_child(0) as Label
 	var detalle := contenido.get_child(1) as Label
 	var ensenanza := contenido.get_child(2) as Label
 	var boton := contenido.get_child(3) as Button
 	_etiquetas_resumen = {"titulo": titulo, "detalle": detalle, "ensenanza": ensenanza}
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	detalle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ensenanza.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ensenanza.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	boton.text = "Volver al menú"
+	boton.add_theme_font_size_override("font_size", 6)
+	EstilosUI.aplicar_boton(boton)
 	boton.pressed.connect(func() -> void:
 		continuar_pulsado.emit()
 		get_tree().change_scene_to_file("res://scenes/main/menu_principal.tscn")
@@ -144,10 +152,12 @@ func _crear_panel_centro(tamano: Vector2) -> Control:
 	centro.add_child(panel)
 	_paneles.append({"panel": panel, "base": tamano})
 
-	var fondo := ColorRect.new()
-	fondo.color = Color("#1A1D24")
-	fondo.set_anchors_preset(Control.PRESET_FULL_RECT)
-	panel.add_child(fondo)
+	panel.add_child(EstilosUI.textura_a_pantalla(EstilosUI.TEXTURA_CUADRO))
+	var velo := ColorRect.new()
+	velo.color = Color(0.102, 0.114, 0.141, 0.72)
+	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	velo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(velo)
 
 	var mensaje := Label.new()
 	mensaje.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -158,6 +168,7 @@ func _crear_panel_centro(tamano: Vector2) -> Control:
 	mensaje.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	mensaje.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	mensaje.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	mensaje.add_theme_color_override("font_color", VERDE_NEON)
 	mensaje.add_theme_font_size_override("font_size", 6)
 	panel.add_child(mensaje)
 
@@ -172,20 +183,28 @@ func _crear_panel_centro(tamano: Vector2) -> Control:
 	panel.add_child(contenido)
 	var lbl1 := Label.new()
 	lbl1.add_theme_font_size_override("font_size", 8)
+	lbl1.add_theme_color_override("font_color", VERDE_NEON)
+	lbl1.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl1.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	contenido.add_child(lbl1)
 	var lbl2 := Label.new()
 	lbl2.add_theme_font_size_override("font_size", 6)
+	lbl2.add_theme_color_override("font_color", VERDE_NEON)
 	lbl2.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	lbl2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl2.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	contenido.add_child(lbl2)
 	var ensenanza := Label.new()
 	ensenanza.name = "Ensenanza"
 	ensenanza.add_theme_font_size_override("font_size", 6)
+	ensenanza.add_theme_color_override("font_color", VERDE_NEON)
 	ensenanza.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ensenanza.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ensenanza.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	contenido.add_child(ensenanza)
 	var boton := Button.new()
 	boton.custom_minimum_size = Vector2(90, 14)
+	boton.add_theme_color_override("font_color", VERDE_NEON)
 	boton.add_theme_font_size_override("font_size", 6)
 	contenido.add_child(boton)
 
