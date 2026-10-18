@@ -1,26 +1,8 @@
-[
-  {
-    "numero": 1,
-    "nombre": "Onboarding: bandeja segura",
-    "duracion_seg": 300,
-    "objetivo": "Identifica los correos de phishing entre 6 mensajes"
-  },
-  {
-    "numero": 2,
-    "nombre": "Bandeja peligrosa",
-    "duracion_seg": 360,
-    "objetivo": "Phishing avanzado y detección de contraseñas débiles"
-  },
-  {
-    "numero": 3,
-    "nombre": "Servidor comprometido",
-    "duracion_seg": 420,
-    "objetivo": "Repara vulnerabilidades sin descuidar la bandeja"
-  },
-  {
-    "numero": 4,
-    "nombre": "Tormenta de amenazas",
-    "duracion_seg": 480,
-    "objetivo": "Todos los módulos activos con infección propagándose"
-  }
-]
+{
+  "niveles": [
+    { "id": 1, "nombre": "Onboarding",            "duracion_seg": 480, "modulos": ["correos"], "pausa_en_guiado": true },
+    { "id": 2, "nombre": "Bandeja peligrosa",     "duracion_seg": 420, "modulos": ["correos", "contrasenas"], "pausa_en_guiado": false },
+    { "id": 3, "nombre": "Servidor comprometido", "duracion_seg": 360, "modulos": ["correos", "contrasenas", "servidores"], "pausa_en_guiado": false },
+    { "id": 4, "nombre": "Tormenta de amenazas",  "duracion_seg": 360, "modulos": ["correos", "contrasenas", "servidores"], "propagacion": true, "pausa_en_guiado": false }
+  ]
+}

@@ -19,7 +19,8 @@
 --   1) schema.sql
 --   2) rls.sql
 --   3) ../backend/rpc_puntaje.sql
---   4) seed.sql   (solo entornos de prueba)
+--   4) ../database/views.sql     (vistas v_* para Looker, T41)
+--   5) seed.sql   (solo entornos de prueba)
 -- =====================================================================
 
 
@@ -92,11 +93,15 @@ CREATE TABLE IF NOT EXISTS eventos_phishing (
   correo_id           text NOT NULL,                       -- id lógico del correo evaluado (p. ej. "correo-003")
   decision            text NOT NULL,
   es_correcto         boolean NOT NULL,
-  senal_clave         text,                                -- señal educativa destacada (nullable)
+  senal_clave         text NOT NULL DEFAULT 'sin_senales', -- vocabulario del modelo §7 (ver CHECK)
   tiempo_respuesta_ms int  NOT NULL,
   creado_en           timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT eventos_phishing_decision_ck
     CHECK (decision IN ('PHISHING', 'LEGITIMO')),
+  CONSTRAINT eventos_phishing_senal_ck
+    CHECK (senal_clave IN ('dominio_sospechoso', 'urgencia', 'error_url',
+                           'adjunto_inesperado', 'suplantacion_marca',
+                           'saludo_generico', 'sin_senales')),
   CONSTRAINT eventos_phishing_tiempo_ck
     CHECK (tiempo_respuesta_ms >= 0)
 );
@@ -104,7 +109,7 @@ CREATE TABLE IF NOT EXISTS eventos_phishing (
 COMMENT ON TABLE  eventos_phishing              IS 'Telemetría del módulo de análisis de phishing. Append-only: cliente solo INSERT.';
 COMMENT ON COLUMN eventos_phishing.correo_id    IS 'Identificador lógico/ficticio del correo evaluado. NO es una dirección de email real (sin PII).';
 COMMENT ON COLUMN eventos_phishing.decision     IS 'Clasificación elegida por el jugador: PHISHING o LEGITIMO.';
-COMMENT ON COLUMN eventos_phishing.senal_clave  IS 'Señal educativa principal detectada (p. ej. "dominio sospechoso", "urgencia"). NULL si no aplica.';
+COMMENT ON COLUMN eventos_phishing.senal_clave  IS 'Señal del vocabulario controlado (modelo §7): dominio_sospechoso, urgencia, error_url, adjunto_inesperado, suplantacion_marca, saludo_generico. ''sin_senales'' si el correo es legítimo.';
 COMMENT ON COLUMN eventos_phishing.tiempo_respuesta_ms IS 'Milisegundos entre ver el correo y decidir (>= 0).';
 
 
@@ -144,17 +149,19 @@ CREATE TABLE IF NOT EXISTS eventos_servidor (
   id                  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   partida_id          uuid NOT NULL REFERENCES partidas (id),
   jugador_id          uuid NOT NULL REFERENCES jugadores (id),
-  servidor_id         text NOT NULL,                       -- id lógico del servidor (p. ej. "srv-02")
-  vulnerabilidad      text NOT NULL,                       -- p. ej. "paquete desactualizado", "puerto abierto"
+  servidor_id         text NOT NULL,                       -- id lógico del servidor (p. ej. "srv_01")
+  vulnerabilidad      text NOT NULL,                       -- vocabulario del modelo §7 (ver CHECK)
   reparado            boolean NOT NULL,
   tiempo_respuesta_ms int  NOT NULL,
   creado_en           timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT eventos_servidor_vulnerabilidad_ck
+    CHECK (vulnerabilidad IN ('paquete_desactualizado', 'puerto_abierto', 'permisos_excesivos')),
   CONSTRAINT eventos_servidor_tiempo_ck
     CHECK (tiempo_respuesta_ms >= 0)
 );
 
 COMMENT ON TABLE  eventos_servidor             IS 'Telemetría del módulo de reparación de servidores. Append-only: cliente solo INSERT.';
-COMMENT ON COLUMN eventos_servidor.vulnerabilidad IS 'Tipo de vulnerabilidad identificada/reparada.';
+COMMENT ON COLUMN eventos_servidor.vulnerabilidad IS 'Vocabulario controlado (modelo §7): paquete_desactualizado, puerto_abierto, permisos_excesivos.';
 
 
 -- ---------------------------------------------------------------------
